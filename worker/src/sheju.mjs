@@ -148,17 +148,34 @@ function providerFailure(status){
 }
 async function probe({key,model,json}){
  const start=performance.now();
+ let response;
  try{
-  const response=await fetch(endpoint,{method:'POST',redirect:'error',signal:AbortSignal.timeout(11000),
+  const base=new URL(endpoint);
+  const signal=AbortSignal.timeout(11000);
+  const call=target=>fetch(target,{method:'POST',redirect:'manual',signal,
    headers:{'Content-Type':'application/json',Authorization:'Bearer '+key},
    body:JSON.stringify({model,messages:[{role:'user',content:'Reply with OK.'}],max_completion_tokens:512})});
-  if(!response.ok)return json(502,providerFailure(response.status));
-  const text=(await response.json()).choices?.[0]?.message?.content;
-  if(typeof text!=='string'||!text.trim())return json(502,{error:'接口已响应，但当前模型没有返回可见文字'});
-  return json(200,{ok:true,model,ms:Math.round(performance.now()-start)});
+  response=await call(base);
+  for(let hop=0;hop<2&&[301,302,307,308].includes(response.status);hop++){
+   const location=response.headers.get('Location');
+   if(!location)break;
+   const next=new URL(location,base);
+   if(next.origin!==base.origin||next.username||next.password)break;
+   await response.body?.cancel();
+   response=await call(next);
+  }
  }catch(error){
-  return json(502,{error:error.name==='TimeoutError'?'GPTGod 连接超时':'无法连接 GPTGod 或读取模型响应'});
+  return json(502,{error:error.name==='TimeoutError'?'GPTGod 连接超时':'Cloudflare 未收到 GPTGod 的 HTTP 响应',stage:'connect'});
  }
+ if(response.status>=300&&response.status<400)return json(502,{error:'GPTGod 返回 HTTP '+response.status+' 跳转，请核对 API 地址',stage:'redirect',upstreamStatus:response.status});
+ if(!response.ok)return json(502,providerFailure(response.status));
+ let data;
+ try{data=await response.json()}catch{
+  return json(502,{error:'GPTGod 返回 HTTP '+response.status+'，但响应不是有效的 JSON',stage:'decode'});
+ }
+ const text=data?.choices?.[0]?.message?.content;
+ if(typeof text!=='string'||!text.trim())return json(502,{error:'接口已响应，但当前模型没有返回可见文字',stage:'content'});
+ return json(200,{ok:true,model,ms:Math.round(performance.now()-start)});
 }
 
 const routes=new Set(['/api/status','/api/probe','/api/actions','/api/plan']);

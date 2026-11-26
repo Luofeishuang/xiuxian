@@ -24,3 +24,16 @@ jobs:
           path: site
       - uses: actions/deploy-pages@v4
         id: deployment
+      - name: Diagnose live AI
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          node --input-type=module <<'NODE'
+          const base='https://tiandao-game-api.luofeishuang.workers.dev';
+          const headers={Origin:'https://luofeishuang.github.io'};
+          for(const [path,method] of [['status','GET'],['probe','POST']]){
+            try{
+              const response=await fetch(base+'/api/'+path,{method,headers,signal:AbortSignal.timeout(18000)});
+              console.log(path,response.status,(await response.text()).slice(0,500));
+            }catch(error){console.log(path,error.name,error.cause?.code||'');}
+          }
+          NODE
