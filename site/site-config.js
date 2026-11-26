@@ -1,0 +1,1 @@
+globalThis.TIANDAO_PROXY = "";

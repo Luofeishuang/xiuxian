@@ -1,0 +1,15 @@
+name = "tiandao-game-api"
+main = "src/index.mjs"
+compatibility_date = "2026-11-26"
+[vars]
+GAME_ORIGIN = "https://YOUR-LOGIN.github.io"
+AI_BASE_URL = "https://api.openai.com/v1"
+AI_MODEL = "gpt-4o-mini"
+[[ratelimits]]
+name = "PLAYER_LIMIT"
+namespace_id = "71301"
+simple = { limit = 10, period = 60 }
+[[ratelimits]]
+name = "GAME_LIMIT"
+namespace_id = "71302"
+simple = { limit = 40, period = 60 }

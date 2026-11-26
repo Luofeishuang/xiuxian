@@ -1,0 +1,36 @@
+name: Publish game
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/configure-pages@v5
+      - name: Configure public AI endpoint
+        env:
+          GAME_API_URL: ${{ vars.GAME_API_URL }}
+        run: |
+          node --input-type=module -e '
+            import {writeFileSync} from "node:fs";
+            const value=process.env.GAME_API_URL||"";
+            if(value){
+              const url=new URL(value);
+              if(url.protocol!=="https:"||url.pathname!=="/play"||url.username||url.password||url.search||url.hash)throw Error("Expected an HTTPS /play endpoint");
+            }
+            writeFileSync("site/site-config.js","globalThis.TIANDAO_PROXY = "+JSON.stringify(value)+";\n");
+          '
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+      - uses: actions/deploy-pages@v4
+        id: deployment
