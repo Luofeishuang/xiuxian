@@ -54,3 +54,39 @@ jobs:
              new Set(data.records.map(record=>record.actor)).size!==8)throw Error('Invalid AI opening schema');
           console.log('AI opening verified with 8 testimonies.');
           NODE
+      - name: Verify sandbox streaming
+        if: ${{ github.event_name == 'workflow_dispatch' && vars.GAME_API_URL != '' }}
+        continue-on-error: true
+        env:
+          GAME_API_URL: ${{ vars.GAME_API_URL }}
+        run: |
+          node --input-type=module <<'NODE'
+          const url=new URL('/sheju/actions',process.env.GAME_API_URL);
+          const start=Date.now();
+          const response=await fetch(url,{
+            method:'POST',signal:AbortSignal.timeout(45000),
+            headers:{Origin:'https://luofeishuang.github.io','Content-Type':'application/json'},
+            body:JSON.stringify({round:1,rule:'悬赏率先破境',people:[
+              {id:3,name:'剑小惑',action:'抢先试丹',after:'走火入魔'},
+              {id:5,name:'小波',action:'避开残丹',after:'平安'},
+              {id:7,name:'小瓜',action:'见势不妙，离开丹库',after:'平安'}
+            ]})
+          });
+          if(!response.ok)throw Error('Sandbox Worker HTTP '+response.status);
+          if(!response.headers.get('Content-Type')?.includes('application/x-ndjson'))throw Error('Expected the NDJSON stream');
+          const ids=new Set();
+          let buffer='',chunks=0;
+          for await(const block of response.body.pipeThrough(new TextDecoderStream())){
+            chunks++;buffer+=block;
+            const lines=buffer.split('\n');buffer=lines.pop();
+            for(const line of lines){
+              const item=JSON.parse(line);
+              if(item.text&&typeof item.text==='string'){
+                ids.add(item.id);
+                console.log('Sandbox action '+ids.size+' received after '+(Date.now()-start)+' ms');
+              }
+            }
+          }
+          if([3,5,7].some(id=>!ids.has(id)))throw Error('Incomplete sandbox stream');
+          console.log('Sandbox streaming verified with '+chunks+' received chunks.');
+          NODE
