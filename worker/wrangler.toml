@@ -4,8 +4,8 @@ compatibility_date = "2026-11-26"
 keep_vars = true
 [vars]
 GAME_ORIGIN = "https://luofeishuang.github.io"
-AI_BASE_URL = "https://api.openai.com/v1"
-AI_MODEL = "gpt-4o-mini"
+AI_BASE_URL = "https://www.cmrxx.com/v1"
+AI_MODEL = "gpt-6-luna"
 [[ratelimits]]
 name = "PLAYER_LIMIT"
 namespace_id = "71301"
