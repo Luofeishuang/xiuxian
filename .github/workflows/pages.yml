@@ -34,3 +34,23 @@ jobs:
           path: site
       - uses: actions/deploy-pages@v4
         id: deployment
+      - name: Verify AI opening
+        if: ${{ vars.GAME_API_URL != '' }}
+        continue-on-error: true
+        env:
+          GAME_API_URL: ${{ vars.GAME_API_URL }}
+        run: |
+          node --input-type=module <<'NODE'
+          const names=['梦小话','眠小雨','青小雁','剑小惑','剑小心','小波','导盲犬','小瓜'];
+          const response=await fetch(process.env.GAME_API_URL,{
+            method:'POST',signal:AbortSignal.timeout(50000),
+            headers:{Origin:'https://luofeishuang.github.io','Content-Type':'application/json'},
+            body:JSON.stringify({task:'opening',payload:{variation:'deployment smoke test',roster:names.map((name,id)=>({id,name}))}})
+          });
+          if(!response.ok)throw Error('Worker HTTP '+response.status);
+          if(response.headers.get('Access-Control-Allow-Origin')!=='https://luofeishuang.github.io')throw Error('Incorrect allowed origin');
+          const data=await response.json();
+          if(!data.title||data.laws?.length!==2||data.records?.length!==8||
+             new Set(data.records.map(record=>record.actor)).size!==8)throw Error('Invalid AI opening schema');
+          console.log('AI opening verified with 8 testimonies.');
+          NODE
