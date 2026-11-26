@@ -2,6 +2,13 @@ name = "tiandao-game-api"
 main = "src/index.mjs"
 compatibility_date = "2026-11-26"
 keep_vars = true
+workers_dev = true
+preview_urls = true
+
+[[routes]]
+pattern = "api.luofeishuang.xyz"
+custom_domain = true
+
 [vars]
 GAME_ORIGIN = "https://luofeishuang.github.io"
 AI_BASE_URL = "https://www.cmrxx.com/v1"

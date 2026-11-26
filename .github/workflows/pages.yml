@@ -28,7 +28,7 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           node --input-type=module <<'NODE'
-          const base='https://tiandao-game-api.luofeishuang.workers.dev';
+          const base='https://api.luofeishuang.xyz';
           const headers={Origin:'https://luofeishuang.github.io'};
           for(const [path,method] of [['status','GET'],['probe','POST']]){
             try{
