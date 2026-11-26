@@ -1,8 +1,9 @@
 name = "tiandao-game-api"
 main = "src/index.mjs"
 compatibility_date = "2026-11-26"
+keep_vars = true
 [vars]
-GAME_ORIGIN = "https://YOUR-LOGIN.github.io"
+GAME_ORIGIN = "https://luofeishuang.github.io"
 AI_BASE_URL = "https://api.openai.com/v1"
 AI_MODEL = "gpt-4o-mini"
 [[ratelimits]]
